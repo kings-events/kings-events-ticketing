@@ -7,12 +7,14 @@
 
   <style>
     body {
+      margin: 0;
       font-family: Arial, sans-serif;
       background: #111;
       color: white;
       display: flex;
       justify-content: center;
       padding: 30px 15px;
+      box-sizing: border-box;
     }
 
     .ticket {
@@ -23,15 +25,17 @@
       border-radius: 18px;
       padding: 24px;
       text-align: center;
+      box-sizing: border-box;
     }
 
     h1 {
       color: #d4af37;
-      margin-bottom: 5px;
+      margin: 0 0 5px;
     }
 
     .event {
       margin-bottom: 25px;
+      font-weight: bold;
     }
 
     .photo {
@@ -40,6 +44,7 @@
       border-radius: 12px;
       object-fit: cover;
       margin-bottom: 20px;
+      display: none;
     }
 
     .label {
@@ -60,11 +65,19 @@
       margin-top: 10px;
     }
 
-    .used {
+    .used,
+    .error {
       color: #ff4d4d;
-      font-size: 28px;
+      font-size: 25px;
       font-weight: bold;
       margin-top: 10px;
+    }
+
+    #errorMessage {
+      color: #ff8888;
+      margin-top: 15px;
+      font-size: 13px;
+      word-break: break-word;
     }
   </style>
 </head>
@@ -91,6 +104,8 @@
 
   <div class="label">Status</div>
   <div id="status" class="valid">Checking...</div>
+
+  <div id="errorMessage"></div>
 </div>
 
 <script>
@@ -100,50 +115,93 @@ const SUPABASE_KEY = "sb_publishable_Kg0Cm510e0K31F4MwS6frQ_tbaqMw8B";
 const params = new URLSearchParams(window.location.search);
 const token = params.get("token");
 
+function showError(message) {
+  document.getElementById("name").innerText = "-";
+  document.getElementById("type").innerText = "-";
+  document.getElementById("price").innerText = "-";
+  document.getElementById("ticketId").innerText = "-";
+  document.getElementById("status").innerText = "INVALID TICKET";
+  document.getElementById("status").className = "error";
+  document.getElementById("errorMessage").innerText = message;
+}
+
 async function loadTicket() {
-
   if (!token) {
-    document.getElementById("status").innerText = "INVALID TICKET";
-    document.getElementById("status").className = "used";
+    showError("Missing ticket token.");
     return;
   }
 
-  const response = await fetch(
-    SUPABASE_URL + "/rest/v1/rpc/get_ticket_by_token",
-    {
-      method: "POST",
-      headers: {
-        "apikey": SUPABASE_KEY,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        p_token: token
-      })
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/rpc/get_ticket_by_token`,
+      {
+        method: "POST",
+        headers: {
+          "apikey": SUPABASE_KEY,
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({
+          p_token: token
+        })
+      }
+    );
+
+    const raw = await response.text();
+
+    if (!response.ok) {
+      showError(`Supabase error ${response.status}: ${raw}`);
+      return;
     }
-  );
 
-  const data = await response.json();
+    let data;
 
-  if (!data || data.length === 0) {
-    document.getElementById("status").innerText = "INVALID TICKET";
-    document.getElementById("status").className = "used";
-    return;
-  }
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      showError("Supabase returned an invalid response.");
+      return;
+    }
 
-  const ticket = data[0];
+    if (!Array.isArray(data) || data.length === 0) {
+      showError("Ticket not found.");
+      return;
+    }
 
-  document.getElementById("photo").src = ticket.photo_url || "";
-  document.getElementById("name").innerText = ticket.full_name;
-  document.getElementById("type").innerText = ticket.ticket_type;
-  document.getElementById("price").innerText = "$" + ticket.ticket_price;
-  document.getElementById("ticketId").innerText = ticket.ticket_id;
+    const ticket = data[0];
 
-  if (ticket.checked_in === true) {
-    document.getElementById("status").innerText = "ALREADY USED";
-    document.getElementById("status").className = "used";
-  } else {
-    document.getElementById("status").innerText = "VALID";
-    document.getElementById("status").className = "valid";
+    if (ticket.photo_url) {
+      const photo = document.getElementById("photo");
+      photo.src = ticket.photo_url;
+      photo.style.display = "inline-block";
+    }
+
+    document.getElementById("name").innerText =
+      ticket.full_name || "-";
+
+    document.getElementById("type").innerText =
+      ticket.ticket_type || "-";
+
+    document.getElementById("price").innerText =
+      ticket.ticket_price != null
+        ? "$" + ticket.ticket_price
+        : "-";
+
+    document.getElementById("ticketId").innerText =
+      ticket.ticket_id || "-";
+
+    document.getElementById("errorMessage").innerText = "";
+
+    if (ticket.checked_in === true) {
+      document.getElementById("status").innerText = "ALREADY USED";
+      document.getElementById("status").className = "used";
+    } else {
+      document.getElementById("status").innerText = "VALID";
+      document.getElementById("status").className = "valid";
+    }
+
+  } catch (error) {
+    showError("Connection error: " + error.message);
   }
 }
 
