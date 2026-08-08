@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kings Events Ticket</title>
+  <title>Anna Mela - Kings Events Ticket</title>
 
   <style>
     body {
@@ -14,7 +14,6 @@
       display: flex;
       justify-content: center;
       padding: 30px 15px;
-      box-sizing: border-box;
     }
 
     .ticket {
@@ -30,7 +29,7 @@
 
     h1 {
       color: #d4af37;
-      margin: 0 0 5px;
+      margin-bottom: 5px;
     }
 
     .event {
@@ -44,7 +43,6 @@
       border-radius: 12px;
       object-fit: cover;
       margin-bottom: 20px;
-      display: none;
     }
 
     .label {
@@ -64,149 +62,38 @@
       font-weight: bold;
       margin-top: 10px;
     }
-
-    .used,
-    .error {
-      color: #ff4d4d;
-      font-size: 25px;
-      font-weight: bold;
-      margin-top: 10px;
-    }
-
-    #errorMessage {
-      color: #ff8888;
-      margin-top: 15px;
-      font-size: 13px;
-      word-break: break-word;
-    }
   </style>
 </head>
 
 <body>
 
-<div class="ticket">
-  <h1>KINGS EVENTS</h1>
-  <div class="event">ISTANBUL IS BACK</div>
+  <div class="ticket">
 
-  <img id="photo" class="photo" alt="Ticket holder">
+    <h1>KINGS EVENTS</h1>
+    <div class="event">ISTANBUL IS BACK</div>
 
-  <div class="label">Name</div>
-  <div id="name" class="value">Loading...</div>
+    <img
+      class="photo"
+      src="COLLE_ICI_URL_PHOTO_ANNA"
+      alt="Anna Mela"
+    >
 
-  <div class="label">Ticket</div>
-  <div id="type" class="value">Loading...</div>
+    <div class="label">Name</div>
+    <div class="value">Anna Mela</div>
 
-  <div class="label">Price</div>
-  <div id="price" class="value">Loading...</div>
+    <div class="label">Ticket</div>
+    <div class="value">General Admission</div>
 
-  <div class="label">Ticket ID</div>
-  <div id="ticketId" class="value">Loading...</div>
+    <div class="label">Price</div>
+    <div class="value">$50</div>
 
-  <div class="label">Status</div>
-  <div id="status" class="valid">Checking...</div>
+    <div class="label">Ticket ID</div>
+    <div class="value">KE-2026-0001</div>
 
-  <div id="errorMessage"></div>
-</div>
+    <div class="label">Status</div>
+    <div class="valid">VALID</div>
 
-<script>
-const SUPABASE_URL = "https://azjzfjghovlljbrtmvyp.supabase.co";
-const SUPABASE_KEY = "sb_publishable_Kg0Cm510e0K31F4MwS6frQ_tbaqMw8B";
-
-const params = new URLSearchParams(window.location.search);
-const token = params.get("token");
-
-function showError(message) {
-  document.getElementById("name").innerText = "-";
-  document.getElementById("type").innerText = "-";
-  document.getElementById("price").innerText = "-";
-  document.getElementById("ticketId").innerText = "-";
-  document.getElementById("status").innerText = "INVALID TICKET";
-  document.getElementById("status").className = "error";
-  document.getElementById("errorMessage").innerText = message;
-}
-
-async function loadTicket() {
-  if (!token) {
-    showError("Missing ticket token.");
-    return;
-  }
-
-  try {
-    const response = await fetch(
-      `${SUPABASE_URL}/rest/v1/rpc/get_ticket_by_token`,
-      {
-        method: "POST",
-        headers: {
-          "apikey": SUPABASE_KEY,
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
-        body: JSON.stringify({
-          p_token: token
-        })
-      }
-    );
-
-    const raw = await response.text();
-
-    if (!response.ok) {
-      showError(`Supabase error ${response.status}: ${raw}`);
-      return;
-    }
-
-    let data;
-
-    try {
-      data = JSON.parse(raw);
-    } catch {
-      showError("Supabase returned an invalid response.");
-      return;
-    }
-
-    if (!Array.isArray(data) || data.length === 0) {
-      showError("Ticket not found.");
-      return;
-    }
-
-    const ticket = data[0];
-
-    if (ticket.photo_url) {
-      const photo = document.getElementById("photo");
-      photo.src = ticket.photo_url;
-      photo.style.display = "inline-block";
-    }
-
-    document.getElementById("name").innerText =
-      ticket.full_name || "-";
-
-    document.getElementById("type").innerText =
-      ticket.ticket_type || "-";
-
-    document.getElementById("price").innerText =
-      ticket.ticket_price != null
-        ? "$" + ticket.ticket_price
-        : "-";
-
-    document.getElementById("ticketId").innerText =
-      ticket.ticket_id || "-";
-
-    document.getElementById("errorMessage").innerText = "";
-
-    if (ticket.checked_in === true) {
-      document.getElementById("status").innerText = "ALREADY USED";
-      document.getElementById("status").className = "used";
-    } else {
-      document.getElementById("status").innerText = "VALID";
-      document.getElementById("status").className = "valid";
-    }
-
-  } catch (error) {
-    showError("Connection error: " + error.message);
-  }
-}
-
-loadTicket();
-</script>
+  </div>
 
 </body>
 </html>
