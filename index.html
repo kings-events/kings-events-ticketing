@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kings Events Ticket</title>
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -13,6 +14,7 @@
       justify-content: center;
       padding: 30px 15px;
     }
+
     .ticket {
       width: 100%;
       max-width: 420px;
@@ -22,60 +24,131 @@
       padding: 24px;
       text-align: center;
     }
+
     h1 {
       color: #d4af37;
       margin-bottom: 5px;
-    
     }
+
     .event {
       margin-bottom: 25px;
     }
+
     .photo {
       width: 180px;
       height: 180px;
       border-radius: 12px;
       object-fit: cover;
-      background: #333;
       margin-bottom: 20px;
     }
+
     .label {
       color: #aaa;
       font-size: 14px;
       margin-top: 15px;
     }
+
     .value {
       font-size: 22px;
       font-weight: bold;
     }
+
     .valid {
       color: #35d07f;
       font-size: 28px;
       font-weight: bold;
       margin-top: 10px;
     }
+
+    .used {
+      color: #ff4d4d;
+      font-size: 28px;
+      font-weight: bold;
+      margin-top: 10px;
+    }
   </style>
 </head>
+
 <body>
 
 <div class="ticket">
   <h1>KINGS EVENTS</h1>
   <div class="event">ISTANBUL IS BACK</div>
-<img class="photo" src=https://azjzfjghovlljbrtmvyp.supabase.co/storage/v1/object/public/ticket-photos/b29a8a8b-787e-4c95-9234-4a3a7c7cecd5.jpeg>
+
+  <img id="photo" class="photo" alt="Ticket holder">
+
   <div class="label">Name</div>
-  <div class="value">Anna Mela</div>
+  <div id="name" class="value">Loading...</div>
 
   <div class="label">Ticket</div>
-  <div class="value">General Admission</div>
+  <div id="type" class="value">Loading...</div>
 
   <div class="label">Price</div>
-  <div class="value">$50</div>
+  <div id="price" class="value">Loading...</div>
 
   <div class="label">Ticket ID</div>
-  <div class="value">KE-2026-0001</div>
+  <div id="ticketId" class="value">Loading...</div>
 
   <div class="label">Status</div>
-  <div class="valid">VALID</div>
+  <div id="status" class="valid">Checking...</div>
 </div>
+
+<script>
+const SUPABASE_URL = "https://azjzfjghovlljbrtmvyp.supabase.co/rest/v1/";
+const SUPABASE_KEY = "sb_publishable_Kg0Cm510e0K31F4MwS6frQ_tbaqMw8B";
+
+const params = new URLSearchParams(window.location.search);
+const token = params.get("token");
+
+async function loadTicket() {
+
+  if (!token) {
+    document.getElementById("status").innerText = "INVALID TICKET";
+    document.getElementById("status").className = "used";
+    return;
+  }
+
+  const response = await fetch(
+    SUPABASE_URL + "/rest/v1/rpc/get_ticket_by_token",
+    {
+      method: "POST",
+      headers: {
+        "apikey": SUPABASE_KEY,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        p_token: token
+      })
+    }
+  );
+
+  const data = await response.json();
+
+  if (!data || data.length === 0) {
+    document.getElementById("status").innerText = "INVALID TICKET";
+    document.getElementById("status").className = "used";
+    return;
+  }
+
+  const ticket = data[0];
+
+  document.getElementById("photo").src = ticket.photo_url || "";
+  document.getElementById("name").innerText = ticket.full_name;
+  document.getElementById("type").innerText = ticket.ticket_type;
+  document.getElementById("price").innerText = "$" + ticket.ticket_price;
+  document.getElementById("ticketId").innerText = ticket.ticket_id;
+
+  if (ticket.checked_in === true) {
+    document.getElementById("status").innerText = "ALREADY USED";
+    document.getElementById("status").className = "used";
+  } else {
+    document.getElementById("status").innerText = "VALID";
+    document.getElementById("status").className = "valid";
+  }
+}
+
+loadTicket();
+</script>
 
 </body>
 </html>
